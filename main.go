@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"golang.org/x/sys/windows/registry"
 	"golang.org/x/term"
 )
 
@@ -122,29 +121,10 @@ func drainStdin(reader *bufio.Reader) {
 	}
 }
 
-func getMachineGUID() (string, error) {
-	key, err := registry.OpenKey(
-		registry.LOCAL_MACHINE,
-		`SOFTWARE\Microsoft\Cryptography`,
-		registry.QUERY_VALUE,
-	)
-	if err != nil {
-		return "", err
-	}
-	defer key.Close()
-
-	guid, _, err := key.GetStringValue("MachineGuid")
-	if err != nil {
-		return "", err
-	}
-
-	return guid, nil
-}
-
 // ===== MAIN =====
 
 func main() {
-	server := "ws://10.127.33.42:22233/ws"
+	server := "wss://pr-noip.sympl.su/ws"
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -153,7 +133,7 @@ func main() {
 
 		if err := conn.WriteJSON(Message{
 			Type:   "admin_hello",
-			ApiKey: "123",
+			ApiKey: "b5679e9e-b5b5-4eaf-bb99-83dba95f9f53",
 		}); err != nil {
 			fmt.Println("Ошибка отправки admin_hello:", err)
 			conn.Close()
@@ -187,12 +167,7 @@ func main() {
 			continue
 		}
 
-		adminID, err := getMachineGUID()
-		if err != nil {
-			fmt.Println("Не удалось получить MachineGuid:", err)
-			conn.Close()
-			continue
-		}
+		adminID := uuid.NewString()
 
 		_ = conn.WriteJSON(Message{
 			Type: "register",
